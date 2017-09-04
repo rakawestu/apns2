@@ -220,11 +220,6 @@ func Decode(pfxData []byte, password string) (privateKey interface{}, certificat
 		return nil, nil, err
 	}
 
-	if len(bags) != 2 {
-		err = errors.New("pkcs12: expected exactly two safe bags in the PFX PDU")
-		return
-	}
-
 	for _, bag := range bags {
 		switch {
 		case bag.Id.Equal(oidCertBag):
