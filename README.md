@@ -9,6 +9,7 @@ APNS/2 is a go package designed for simple, flexible and fast Apple Push Notific
 - Uses new Apple APNs HTTP/2 connection
 - Fast - See [notes on speed](https://github.com/sideshow/apns2/wiki/APNS-HTTP-2-Push-Speed)
 - Works with go 1.6 and later
+- Supports new Apple Token Based Authentication (JWT)
 - Supports new iOS 10 features such as Collapse IDs, Subtitles and Mutable Notifications
 - Supports persistent connections to APNs
 - Supports VoIP/PushKit notifications (iOS 8 and later)
@@ -65,6 +66,34 @@ func main() {
 }
 ```
 
+## JWT Token Example
+
+Instead of using a `.p12` or `.pem` certificate as above, you can optionally use
+APNs JWT _Provider Authentication Tokens_. First you will need a signing key (`.p8` file), Key ID and Team ID [from Apple](http://help.apple.com/xcode/mac/current/#/dev54d690a66). Once you have these details, you can create a new client:
+
+```go
+authKey, err := token.AuthKeyFromFile("../AuthKey_XXX.p8")
+if err != nil {
+  log.Fatal("token error:", err)
+}
+
+token := &token.Token{
+  AuthKey: authKey,
+  // KeyID from developer account (Certificates, Identifiers & Profiles -> Keys)
+  KeyID:   "ABC123DEFG",
+  // TeamID from developer account (View Account -> Membership)
+  TeamID:  "DEF123GHIJ",
+}
+...
+
+client := apns2.NewTokenClient(token)
+res, err := client.Push(notification)
+```
+
+- You can use one APNs signing key to authenticate tokens for multiple apps.
+- A signing key works for both the development and production environments.
+- A signing key doesn’t expire but can be revoked.
+
 ## Notification
 
 At a minimum, a _Notification_ needs a _DeviceToken_, a _Topic_ and a _Payload_.
@@ -92,7 +121,7 @@ You can use raw bytes for the `notification.Payload` as above, or you can use th
 ```go
 // {"aps":{"alert":"hello","badge":1},"key":"val"}
 
-payload := apns2.NewPayload().Alert("hello").Badge(1).Custom("key", "val")
+payload := payload.NewPayload().Alert("hello").Badge(1).Custom("key", "val")
 
 notification.Payload = payload
 client.Push(notification)
@@ -125,7 +154,7 @@ if res.Sent() {
 
 ## Context & Timeouts
 
-For better control over request cancelations and timeouts APNS/2 supports
+For better control over request cancellations and timeouts APNS/2 supports
 contexts. Using a context can be helpful if you want to cancel all pushes when
 the parent process is cancelled, or need finer grained control over individual
 push timeouts. See the [Google post](https://blog.golang.org/context) for more

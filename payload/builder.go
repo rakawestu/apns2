@@ -16,22 +16,30 @@ type aps struct {
 	Category         string      `json:"category,omitempty"`
 	ContentAvailable int         `json:"content-available,omitempty"`
 	MutableContent   int         `json:"mutable-content,omitempty"`
-	Sound            string      `json:"sound,omitempty"`
+	Sound            interface{} `json:"sound,omitempty"`
 	ThreadID         string      `json:"thread-id,omitempty"`
 	URLArgs          []string    `json:"url-args,omitempty"`
 }
 
 type alert struct {
-	Action       string   `json:"action,omitempty"`
-	ActionLocKey string   `json:"action-loc-key,omitempty"`
-	Body         string   `json:"body,omitempty"`
-	LaunchImage  string   `json:"launch-image,omitempty"`
-	LocArgs      []string `json:"loc-args,omitempty"`
-	LocKey       string   `json:"loc-key,omitempty"`
-	Title        string   `json:"title,omitempty"`
-	Subtitle     string   `json:"subtitle,omitempty"`
-	TitleLocArgs []string `json:"title-loc-args,omitempty"`
-	TitleLocKey  string   `json:"title-loc-key,omitempty"`
+	Action          string   `json:"action,omitempty"`
+	ActionLocKey    string   `json:"action-loc-key,omitempty"`
+	Body            string   `json:"body,omitempty"`
+	LaunchImage     string   `json:"launch-image,omitempty"`
+	LocArgs         []string `json:"loc-args,omitempty"`
+	LocKey          string   `json:"loc-key,omitempty"`
+	Title           string   `json:"title,omitempty"`
+	Subtitle        string   `json:"subtitle,omitempty"`
+	TitleLocArgs    []string `json:"title-loc-args,omitempty"`
+	TitleLocKey     string   `json:"title-loc-key,omitempty"`
+	SummaryArg      string   `json:"summary-arg,omitempty"`
+	SummaryArgCount int      `json:"summary-arg-count,omitempty"`
+}
+
+type sound struct {
+	Critical int     `json:"critical,omitempty"`
+	Name     string  `json:"name,omitempty"`
+	Volume   float32 `json:"volume,omitempty"`
 }
 
 // NewPayload returns a new Payload struct
@@ -84,7 +92,7 @@ func (p *Payload) UnsetBadge() *Payload {
 // This will play a sound from the app bundle, or the default sound otherwise.
 //
 //	{"aps":{"sound":sound}}
-func (p *Payload) Sound(sound string) *Payload {
+func (p *Payload) Sound(sound interface{}) *Payload {
 	p.aps().Sound = sound
 	return p
 }
@@ -229,13 +237,35 @@ func (p *Payload) AlertActionLocKey(key string) *Payload {
 	return p
 }
 
+// AlertSummaryArg sets the aps alert summary arg key on the payload.
+// This is the string that is used as a key to fill in an argument
+// at the bottom of a notification to provide more context, such as
+// a name associated with the sender of the notification.
+//
+//	{"aps":{"alert":{"summary-arg":key}}}
+func (p *Payload) AlertSummaryArg(key string) *Payload {
+	p.aps().alert().SummaryArg = key
+	return p
+}
+
+// AlertSummaryArgCount sets the aps alert summary arg count key on the payload.
+// This integer sets a custom "weight" on the notification, effectively
+// allowing a notification to be viewed internally as two. For example if
+// a notification encompasses 3 messages, you can set it to 3.
+//
+//	{"aps":{"alert":{"summary-arg-count":key}}}
+func (p *Payload) AlertSummaryArgCount(key int) *Payload {
+	p.aps().alert().SummaryArgCount = key
+	return p
+}
+
 // General
 
 // Category sets the aps category on the payload.
 // This is a string value that represents the identifier property of the
 // UIMutableUserNotificationCategory object you created to define custom actions.
 //
-//	{"aps":{"alert":{"category":category}}}
+//	{"aps":{"category":category}}
 func (p *Payload) Category(category string) *Payload {
 	p.aps().Category = category
 	return p
@@ -274,6 +304,26 @@ func (p *Payload) URLArgs(urlArgs []string) *Payload {
 	return p
 }
 
+// SoundName sets the name value on the aps sound dictionary.
+// This function makes the notification a critical alert, which should be pre-approved by Apple.
+// See: https://developer.apple.com/contact/request/notifications-critical-alerts-entitlement/
+//
+// {"aps":{"sound":{"critical":1,"name":name,"volume":1.0}}}
+func (p *Payload) SoundName(name string) *Payload {
+	p.aps().sound().Name = name
+	return p
+}
+
+// SoundVolume sets the volume value on the aps sound dictionary.
+// This function makes the notification a critical alert, which should be pre-approved by Apple.
+// See: https://developer.apple.com/contact/request/notifications-critical-alerts-entitlement/
+//
+// {"aps":{"sound":{"critical":1,"name":"default","volume":volume}}}
+func (p *Payload) SoundVolume(volume float32) *Payload {
+	p.aps().sound().Volume = volume
+	return p
+}
+
 // MarshalJSON returns the JSON encoded version of the Payload
 func (p *Payload) MarshalJSON() ([]byte, error) {
 	return json.Marshal(p.content)
@@ -288,4 +338,11 @@ func (a *aps) alert() *alert {
 		a.Alert = &alert{}
 	}
 	return a.Alert.(*alert)
+}
+
+func (a *aps) sound() *sound {
+	if _, ok := a.Sound.(*sound); !ok {
+		a.Sound = &sound{Critical: 1, Name: "default", Volume: 1.0}
+	}
+	return a.Sound.(*sound)
 }

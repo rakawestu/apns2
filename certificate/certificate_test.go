@@ -15,20 +15,20 @@ import (
 func TestValidCertificateFromP12File(t *testing.T) {
 	cer, err := certificate.FromP12File("_fixtures/certificate-valid.p12", "")
 	assert.Nil(t, err)
-	assert.Nil(t, verifyHostname(cer))
+	assert.NotEqual(t, tls.Certificate{}, cer)
 }
 
 func TestValidCertificateFromP12Bytes(t *testing.T) {
 	bytes, _ := ioutil.ReadFile("_fixtures/certificate-valid.p12")
 	cer, err := certificate.FromP12Bytes(bytes, "")
 	assert.NoError(t, err)
-	assert.Nil(t, verifyHostname(cer))
+	assert.NotEqual(t, tls.Certificate{}, cer)
 }
 
 func TestEncryptedValidCertificateFromP12File(t *testing.T) {
 	cer, err := certificate.FromP12File("_fixtures/certificate-valid-encrypted.p12", "password")
 	assert.NoError(t, err)
-	assert.Nil(t, verifyHostname(cer))
+	assert.NotEqual(t, tls.Certificate{}, cer)
 }
 
 func TestNoSuchFileP12File(t *testing.T) {
@@ -48,20 +48,33 @@ func TestBadPasswordP12File(t *testing.T) {
 func TestValidCertificateFromPemFile(t *testing.T) {
 	cer, err := certificate.FromPemFile("_fixtures/certificate-valid.pem", "")
 	assert.NoError(t, err)
-	assert.Nil(t, verifyHostname(cer))
+	assert.NotEqual(t, tls.Certificate{}, cer)
 }
 
 func TestValidCertificateFromPemBytes(t *testing.T) {
 	bytes, _ := ioutil.ReadFile("_fixtures/certificate-valid.pem")
 	cer, err := certificate.FromPemBytes(bytes, "")
 	assert.NoError(t, err)
-	assert.Nil(t, verifyHostname(cer))
+	assert.NotEqual(t, tls.Certificate{}, cer)
+}
+
+func TestValidCertificateFromPemFileWithPKCS8PrivateKey(t *testing.T) {
+	cer, err := certificate.FromPemFile("_fixtures/certificate-valid-pkcs8.pem", "")
+	assert.NoError(t, err)
+	assert.NotEqual(t, tls.Certificate{}, cer)
+}
+
+func TestValidCertificateFromPemBytesWithPKCS8PrivateKey(t *testing.T) {
+	bytes, _ := ioutil.ReadFile("_fixtures/certificate-valid-pkcs8.pem")
+	cer, err := certificate.FromPemBytes(bytes, "")
+	assert.NoError(t, err)
+	assert.NotEqual(t, tls.Certificate{}, cer)
 }
 
 func TestEncryptedValidCertificateFromPemFile(t *testing.T) {
 	cer, err := certificate.FromPemFile("_fixtures/certificate-valid-encrypted.pem", "password")
 	assert.NoError(t, err)
-	assert.Nil(t, verifyHostname(cer))
+	assert.NotEqual(t, tls.Certificate{}, cer)
 }
 
 func TestNoSuchFilePemFile(t *testing.T) {
@@ -79,7 +92,7 @@ func TestBadPasswordPemFile(t *testing.T) {
 func TestBadKeyPemFile(t *testing.T) {
 	cer, err := certificate.FromPemFile("_fixtures/certificate-bad-key.pem", "")
 	assert.Equal(t, tls.Certificate{}, cer)
-	assert.Equal(t, certificate.ErrFailedToParsePKCS1PrivateKey, err)
+	assert.Equal(t, certificate.ErrFailedToParsePrivateKey, err)
 }
 
 func TestNoKeyPemFile(t *testing.T) {
@@ -92,11 +105,4 @@ func TestNoCertificatePemFile(t *testing.T) {
 	cer, err := certificate.FromPemFile("_fixtures/certificate-no-certificate.pem", "")
 	assert.Equal(t, tls.Certificate{}, cer)
 	assert.Equal(t, certificate.ErrNoCertificate, err)
-}
-
-func verifyHostname(cert tls.Certificate) error {
-	if cert.Leaf == nil {
-		return errors.New("expected leaf cert")
-	}
-	return cert.Leaf.VerifyHostname("APNS/2 Development IOS Push Services: com.sideshow.Apns2")
 }

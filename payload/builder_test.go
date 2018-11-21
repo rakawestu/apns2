@@ -44,6 +44,16 @@ func TestSound(t *testing.T) {
 	assert.Equal(t, `{"aps":{"sound":"Default.caf"}}`, string(b))
 }
 
+func TestSoundDictionary(t *testing.T) {
+	payload := NewPayload().Sound(map[string]interface{}{
+		"critical": 1,
+		"name":     "default",
+		"volume":   0.8,
+	})
+	b, _ := json.Marshal(payload)
+	assert.Equal(t, `{"aps":{"sound":{"critical":1,"name":"default","volume":0.8}}}`, string(b))
+}
+
 func TestContentAvailable(t *testing.T) {
 	payload := NewPayload().ContentAvailable()
 	b, _ := json.Marshal(payload)
@@ -152,6 +162,30 @@ func TestURLArgs(t *testing.T) {
 	payload := NewPayload().URLArgs([]string{"a", "b"})
 	b, _ := json.Marshal(payload)
 	assert.Equal(t, `{"aps":{"url-args":["a","b"]}}`, string(b))
+}
+
+func TestSoundName(t *testing.T) {
+	payload := NewPayload().SoundName("test")
+	b, _ := json.Marshal(payload)
+	assert.Equal(t, `{"aps":{"sound":{"critical":1,"name":"test","volume":1}}}`, string(b))
+}
+
+func TestSoundVolume(t *testing.T) {
+	payload := NewPayload().SoundVolume(0.5)
+	b, _ := json.Marshal(payload)
+	assert.Equal(t, `{"aps":{"sound":{"critical":1,"name":"default","volume":0.5}}}`, string(b))
+}
+
+func TestAlertSummaryArg(t *testing.T) {
+	payload := NewPayload().AlertSummaryArg("Robert")
+	b, _ := json.Marshal(payload)
+	assert.Equal(t, `{"aps":{"alert":{"summary-arg":"Robert"}}}`, string(b))
+}
+
+func TestAlertSummaryArgCount(t *testing.T) {
+	payload := NewPayload().AlertSummaryArgCount(3)
+	b, _ := json.Marshal(payload)
+	assert.Equal(t, `{"aps":{"alert":{"summary-arg-count":3}}}`, string(b))
 }
 
 func TestCombined(t *testing.T) {
